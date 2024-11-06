@@ -1,7 +1,19 @@
 llsum:
-    # replace these instructions with your code
-    li      $v0,            0
-    jr      $ra
+    # Base case: check if the current node pointer is NULL
+    beq     $a0,            $zero,  end_recursion   # If current node is NULL, return 0
+
+    # Recursive case: add the value of the current node to the sum of the rest of the list
+    lw      $t0,            0($a0)                  # Load the integer value of the current node into $t0
+    lw      $a0,            4($a0)                  # Load the next node pointer into $a0
+    jal     llsum                                   # Recursive call to llsum with the next node
+    add     $v0,            $v0,    $t0             # Add the value of the current node to the sum from recursive call
+
+    jr      $ra                                     # Return to caller
+
+end_recursion:
+    li      $v0,            0                       # Return 0 if we've reached the end of the list
+    jr      $ra                                     # Return to caller
+
     #### Do not remove this separator. Place all of your code above this line. ####
 main:
     addi    $sp,            $sp,    -4
