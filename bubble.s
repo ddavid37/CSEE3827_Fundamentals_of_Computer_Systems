@@ -1,9 +1,47 @@
 bubble:
-    # Replace this instruction with your code
+    # Save registers to stack
+    addi    $sp,                $sp,        -12
+    sw      $ra,                0($sp)
+    sw      $s0,                4($sp)
+    sw      $s1,                8($sp)
+
+    # Outer loop: Iterate through the array multiple times
+    move    $s0,                $a1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 # $s0 = number of elements (outer loop counter)
+outer_loop:
+    addi    $s0,                $s0,        -1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      # $s0 = $s0 - 1
+    blez    $s0,                end_bubble                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          # If $s0 <= 0, we are done
+
+    # Inner loop: Perform swaps within unsorted portion of the array
+    move    $s1,                $zero                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               # $s1 = 0 (inner loop index)
+inner_loop:
+    # Load the current and next elements to compare
+    sll     $t0,                $s1,        2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       # $t0 = $s1 * 4 (byte offset)
+    add     $t0,                $a0,        $t0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     # $t0 = address of array[$s1]
+    lw      $t1,                0($t0)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # $t1 = array[$s1]
+    lw      $t2,                4($t0)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # $t2 = array[$s1 + 1]
+
+    # Compare and swap if necessary
+    ble     $t1,                $t2,        no_swap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 # If array[$s1] <= array[$s1 + 1], skip
+    sw      $t2,                0($t0)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # Swap: store array[$s1 + 1] in array[$s1]
+    sw      $t1,                4($t0)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # Swap: store array[$s1] in array[$s1 + 1]
+
+no_swap:
+    addi    $s1,                $s1,        1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       # $s1 = $s1 + 1 (next index)
+    blt     $s1,                $s0,        inner_loop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # Repeat inner loop if $s1 < $s0
+
+    b       outer_loop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              # Repeat outer loop
+
+end_bubble:
+    # Restore registers and return
+    lw      $ra,                0($sp)
+    lw      $s0,                4($sp)
+    lw      $s1,                8($sp)
+    addi    $sp,                $sp,        12
     jr      $ra
+
     #### Do not remove this separator. Place all of your code above this line. ####
 main:
-    addi    $sp,                $sp,    -4
+    addi    $sp,                $sp,        -4
     sw      $ra,                0($sp)
 
     # bubble(arrayA) = 2 3 6 8
@@ -32,24 +70,24 @@ main:
 
     # return
     lw      $ra,                0($sp)
-    addi    $sp,                $sp,    4
+    addi    $sp,                $sp,        4
     jr      $ra
 
 print_array:
     # save regs to stack
-    addi    $sp,                $sp,    -12
+    addi    $sp,                $sp,        -12
     sw      $ra,                0($sp)
     sw      $s0,                4($sp)
     sw      $s1,                8($sp)
 
     # save base and bound pointers
     move    $s0,                $a0
-    sll     $s1,                $a1,    2
-    add     $s1,                $s0,    $s1
+    sll     $s1,                $a1,        2
+    add     $s1,                $s0,        $s1
 
 print_array_top:
     # if at bound, return
-    beq     $s0,                $s1,    print_array_return
+    beq     $s0,                $s1,        print_array_return
 
     # else print entry and space
     lw      $a0,                0($s0)
@@ -57,7 +95,7 @@ print_array_top:
     jal     print_space
 
     # increment pointer and continue
-    addi    $s0,                $s0,    4
+    addi    $s0,                $s0,        4
     b       print_array_top
 
 print_array_return:
@@ -68,7 +106,7 @@ print_array_return:
     lw      $ra,                0($sp)
     lw      $s0,                4($sp)
     lw      $s1,                8($sp)
-    addi    $sp,                $sp,    12
+    addi    $sp,                $sp,        12
     jr      $ra
 
 print_int:
@@ -87,7 +125,6 @@ print_space:
     li      $a0,                32
     syscall
     jr      $ra
-
 
 .data
 
