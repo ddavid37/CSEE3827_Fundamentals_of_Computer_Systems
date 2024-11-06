@@ -1,7 +1,7 @@
 rfib:
-    # Base case: if n == 0, return 0
+    # Base case for rfib(0)
     beq     $a0,            0,      rfib_zero
-    # Base case: if n == 1, return 1
+    # Base case for rfib(1)
     beq     $a0,            1,      rfib_one
 
     # Recursive case: calculate rfib(n-1) + rfib(n-2)
