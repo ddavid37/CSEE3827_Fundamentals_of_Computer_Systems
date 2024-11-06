@@ -21,8 +21,8 @@ rfib:
     jal     rfib
     # Result of rfib(n-2) is in $v0
 
-    # Add rfib(n-1) and rfib(n-2)
-    add     $v0,            $t0,    $v0
+    # Add rfib(n-1) and rfib(n-2) with unsigned addition to avoid overflow exception
+    addu    $v0,            $t0,    $v0
 
     # Restore $a0 and return
     lw      $a0,            0($sp)
