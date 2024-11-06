@@ -1,35 +1,41 @@
 rfib:
-    addi    $sp,            $sp,    -8              # Allocate stack space
-    sw      $ra,            4($sp)                  # Save return address
-    sw      $a0,            0($sp)                  # Save argument
+    # Base case: if n == 0, return 0
+    beq     $a0,            0,      rfib_zero
+    # Base case: if n == 1, return 1
+    beq     $a0,            1,      rfib_one
 
-    li      $t0,            1                       # Base case: if n == 1
-    beq     $a0,            $t0,    base_case_one
-    li      $t0,            0                       # Base case: if n == 0
-    beq     $a0,            $t0,    base_case_zero
+    # Recursive case: calculate rfib(n-1) + rfib(n-2)
+    # Save $a0 (n) on the stack
+    addi    $sp,            $sp,    -4
+    sw      $a0,            0($sp)
 
-    addi    $a0,            $a0,    -1              # Recursive case: rfib(n-1)
+    # Calculate rfib(n-1)
+    addi    $a0,            $a0,    -1
     jal     rfib
-    move    $t1,            $v0                     # Save rfib(n-1) in $t1
+    # Save result of rfib(n-1) in $t0
+    move    $t0,            $v0
 
-    lw      $a0,            0($sp)                  # Restore argument
-    addi    $a0,            $a0,    -2              # Recursive case: rfib(n-2)
+    # Restore $a0 (n) and calculate rfib(n-2)
+    lw      $a0,            0($sp)
+    addi    $a0,            $a0,    -2
     jal     rfib
-    add     $v0,            $v0,    $t1             # rfib(n) = rfib(n-1) + rfib(n-2)
-    j       end_rfib
+    # Result of rfib(n-2) is in $v0
 
-base_case_one:
-    li      $v0,            1                       # rfib(1) = 1
-    j       end_rfib
+    # Add rfib(n-1) and rfib(n-2)
+    add     $v0,            $t0,    $v0
 
-base_case_zero:
-    li      $v0,            0                       # rfib(0) = 0
+    # Restore $a0 and return
+    lw      $a0,            0($sp)
+    addi    $sp,            $sp,    4
+    jr      $ra
 
-end_rfib:
-    lw      $ra,            4($sp)                  # Restore return address
-    lw      $a0,            0($sp)                  # Restore argument
-    addi    $sp,            $sp,    8               # Deallocate stack space
-    jr      $ra                                     # Return
+rfib_zero:
+    li      $v0,            0
+    jr      $ra
+
+rfib_one:
+    li      $v0,            1
+    jr      $ra
 
     #### Do not remove this separator. Place all of your code above this line. ####
 main:
