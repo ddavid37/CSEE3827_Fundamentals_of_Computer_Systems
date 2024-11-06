@@ -1,4 +1,4 @@
-ifib:
+rfib:
     addi    $sp,            $sp,    -8              # Allocate stack space
     sw      $ra,            4($sp)                  # Save return address
     sw      $a0,            0($sp)                  # Save argument
