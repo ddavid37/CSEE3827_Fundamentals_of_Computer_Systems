@@ -80,4 +80,3 @@ print_newline:
     li      $a0,            10
     syscall
     jr      $ra
-
