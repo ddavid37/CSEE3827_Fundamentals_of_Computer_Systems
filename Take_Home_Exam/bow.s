@@ -78,13 +78,37 @@ letters_dont_match:
     #### Do not move this separator. Place all of your lettersmatch code above this line, and below previous separator. ###
 
 nextword:
-    # Save registers we'll use
+    # replace thiese instructions with your code
     addi    $sp,                    $sp,                    -8
     sw      $ra,                    0($sp)
-    sw      $s0,                    4($sp)
+    sw      $ra,                    4($sp)
 
-    # Save starting address in $s0
-    move    $s0,                    $a0
+curr_word:
+    move    $t9,                    $a0
+    lbu     $t5,                    0($t0)
+    beq     $t5,                    $zero,                  end
+    move    $a0,                    $t9
+    beq     $v0,                    $zero,                  skip_gap
+    addi    $a0,                    $a0,                    1
+    jal     curr_word
+
+skip_gap:
+    move    $t9,                    $a0
+    lbu     $t5,                    0($t0)
+    beq     $t5,                    $zero,                  end
+    move    $a0,                    $t5
+    jal     isletter
+    move    $a0,                    $t9
+    bne     $v0,                    $zero,                  return
+    addi    $a0,                    $a0,                    1
+    jal     skip_gap
+
+return:
+    move    $v0,                    $a0
+    lw      a0,                     0($sp)
+    lw      ra,                     4($sp)
+    addi    $sp,                    $sp,                    8
+    jr      $ra
 
     # First, if we're inside a word, skip to end of current word
 skip_current:
