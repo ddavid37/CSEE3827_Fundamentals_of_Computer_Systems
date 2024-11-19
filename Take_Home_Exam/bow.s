@@ -110,54 +110,10 @@ return:
     addi    $sp,                    $sp,                    8
     jr      $ra
 
-    # First, if we're inside a word, skip to end of current word
-skip_current:
-    # Load current character
-    lbu     $a0,                    0($s0)
-
-    # If null terminator, return 0
-    beqz    $a0,                    nextword_not_found
-
-    # Check if current char is letter
-    jal     isletter
-
-    # If not a letter, move to finding next word
-    beqz    $v0,                    find_next
-
-    # Still in word, keep moving
-    addi    $s0,                    $s0,                    1
-    j       skip_current
-
-find_next:
-    # Load current character
-    lbu     $a0,                    0($s0)
-
-    # If null terminator, return 0
-    beqz    $a0,                    nextword_not_found
-
-    # Check if current char is letter
-    jal     isletter
-
-    # If it's a letter, we found the start of next word
-    bnez    $v0,                    nextword_found
-
-    # Not a letter, keep looking
-    addi    $s0,                    $s0,                    1
-    j       find_next
-
-nextword_found:
-    # Return pointer to start of word
-    move    $v0,                    $s0
-    j       nextword_return
-
-nextword_not_found:
-    # Return 0 if no word found
+end:
     li      $v0,                    0
-
-nextword_return:
-    # Restore saved registers
-    lw      $ra,                    0($sp)
-    lw      $s0,                    4($sp)
+    lw      $a0,                    0($sp)
+    lw      $ra,                    4($sp)
     addi    $sp,                    $sp,                    8
     jr      $ra
 
