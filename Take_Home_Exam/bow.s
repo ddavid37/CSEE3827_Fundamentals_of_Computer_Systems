@@ -95,8 +95,74 @@ end:
     #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
 
 wordsmatch:
-    # replace these instructions with your code
+    # Save $a0 and $a1 to stack to preserve original pointers
+    addi    $sp,                    $sp,                    -8
+    sw      $a0,                    0($sp)
+    sw      $a1,                    4($sp)
+
+word_loop:
+    # Load current characters from $a0 and $a1
+    lbu     $t0,                    0($a0)
+    lbu     $t1,                    0($a1)
+
+    # Check if we reached the end of either word
+    beq     $t0,                    $zero,                  check_end
+    beq     $t1,                    $zero,                  check_end
+
+    # Check if both characters are letters
+    move    $a0,                    $t0
+    jal     isletter
+    move    $t2,                    $v0                                 # Store result of isletter($t0)
+
+    move    $a0,                    $t1
+    jal     isletter
+    move    $t3,                    $v0                                 # Store result of isletter($t1)
+
+    # If one is not a letter, skip it
+    beq     $t2,                    $zero,                  skip_a0
+    beq     $t3,                    $zero,                  skip_a1
+
+    # Check if letters match
+    move    $a0,                    $t0
+    move    $a1,                    $t1
+    jal     lettersmatch
+    beq     $v0,                    $zero,                  mismatch
+
+    # Advance both pointers if letters match
+    addi    $a0,                    $a0,                    1
+    addi    $a1,                    $a1,                    1
+    j       word_loop
+
+skip_a0:
+    # Skip non-letter in $a0
+    addi    $a0,                    $a0,                    1
+    j       word_loop
+
+skip_a1:
+    # Skip non-letter in $a1
+    addi    $a1,                    $a1,                    1
+    j       word_loop
+
+check_end:
+    # Ensure both pointers are at the end
+    lbu     $t0,                    0($a0)
+    lbu     $t1,                    0($a1)
+    beq     $t0,                    $t1,                    match
+
+mismatch:
+    # Words do not match
     li      $v0,                    0
+    j       wordsmatch_end
+
+match:
+    # Words match
+    li      $v0,                    1
+
+wordsmatch_end:
+    # Restore original pointers and return
+    lw      $a0,                    0($sp)
+    lw      $a1,                    4($sp)
+    addi    $sp,                    $sp,                    8
     jr      $ra
 
     #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
