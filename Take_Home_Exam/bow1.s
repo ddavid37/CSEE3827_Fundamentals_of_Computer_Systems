@@ -1,133 +1,113 @@
 .text
 
 isletter:
-    # Check if $a0 is an uppercase letter ('A' to 'Z')
-    li      $t0,                    65                                          # ASCII value of 'A'
-    li      $t1,                    90                                          # ASCII value of 'Z'
-    bge     $a0,                    $t0,                    check_upper_end
-    j       check_lower                                                         # Skip to lowercase check if less than 'A'
+    li      $t1,                    65
+    li      $t2,                    90
+    li      $t3,                    97
+    li      $t4,                    122
 
-check_upper_end:
-    ble     $a0,                    $t1,                    return_true
-    j       check_lower                                                         # Not uppercase, check lowercase
+    # check if char is in range A-Z or a-z
+    bgt     $a0,                    $t2,                    check_a
 
-    # Check if $a0 is a lowercase letter ('a' to 'z')
-check_lower:
-    li      $t0,                    97                                          # ASCII value of 'a'
-    li      $t1,                    122                                         # ASCII value of 'z'
-    bge     $a0,                    $t0,                    check_lower_end
-    j       return_false                                                        # Not a letter
+    bgt     $t1,                    $a0,                    zero_value
+    bgt     $a0,                    $t2,                    zero_value
+    li      $v0,                    1
+    jr      $ra
 
-check_lower_end:
-    ble     $a0,                    $t1,                    return_true
+check_a:
+    bgt     $t3,                    $a0,                    zero_value
+    bgt     $a0,                    $t4,                    zero_value
+    li      $v0,                    1
+    jr      $ra
 
-    # Return false if not a letter
-return_false:
-    li      $v0,                    0                                           # Not a letter
-    jr      $ra                                                                 # Return to caller
+zero_value:
 
-    # Return true if a letter
-return_true:
-    li      $v0,                    1                                           # Is a letter
-    jr      $ra                                                                 # Return to caller
+    li      $v0,                    0
+    jr      $ra
 
-    #### Do not move this separator. Place all of your isletter code above this line. ####
+    #### Do not move this separator. Place all of your isletter code above this line, and below previous separator. ###
 
+    # check if two characters match
 lettersmatch:
-    # Convert both $a0 and $a1 to uppercase if they are lowercase
-    li      $t0,                    97                                          # ASCII value of 'a'
-    li      $t1,                    122                                         # ASCII value of 'z'
-    li      $t2,                    32                                          # ASCII difference between uppercase and lowercase
+    li      $t8,                    32
+    beq     $a1,                    $a0,                    link_one
+    slt     $v0,                    $a0,                    $a1
+    beq     $v0,                    $zero,                  sub_a
+    sub     $v0,                    $a1,                    $a0
+    beq     $v0,                    $t8,                    link_one
+    li      $v0,                    0
+    jr      $ra
 
-    # Convert $a0 to uppercase if necessary
-    bge     $a0,                    $t0,                    check_a0_uppercase
-    j       check_a1                                                            # Skip if already uppercase
+sub_a:
+    sub     $v0,                    $a0,                    $a1
+    beq     $v0,                    $t8,                    link_one
+    li      $v0,                    0
+    jr      $ra
 
-check_a0_uppercase:
-    ble     $a0,                    $t1,                    convert_a0
-    j       check_a1                                                            # Skip if not lowercase
-
-convert_a0:
-    sub     $a0,                    $a0,                    $t2                 # Convert to uppercase
-
-    # Convert $a1 to uppercase if necessary
-check_a1:
-    bge     $a1,                    $t0,                    check_a1_uppercase
-    j       compare_letters                                                     # Skip if already uppercase
-
-check_a1_uppercase:
-    ble     $a1,                    $t1,                    convert_a1
-    j       compare_letters                                                     # Skip if not lowercase
-
-convert_a1:
-    sub     $a1,                    $a1,                    $t2                 # Convert to uppercase
-
-    # Compare the letters
-compare_letters:
-    beq     $a0,                    $a1,                    letters_match
-    j       letters_dont_match
-
-letters_match:
-    li      $v0,                    1                                           # Letters match
-    jr      $ra                                                                 # Return to caller
-
-letters_dont_match:
-    li      $v0,                    0                                           # Letters don't match
-    jr      $ra                                                                 # Return to caller
+link_one:
+    li      $v0,                    1
+    jr      $ra
 
     #### Do not move this separator. Place all of your lettersmatch code above this line, and below previous separator. ###
 
+    # find the next word in a string
 nextword:
-    # (Already implemented in your code)
-
-    #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
-
-wordsmatch:
-    # Save registers
     addi    $sp,                    $sp,                    -8
-    sw      $ra,                    0($sp)
-    sw      $s0,                    4($sp)
+    sw      $a0,                    0($sp)
+    sw      $ra,                    4($sp)
 
-    # Loop to compare words
-wordsmatch_loop:
-    lbu     $t0,                    0($a0)                                      # Load current char from $a0
-    lbu     $t1,                    0($a1)                                      # Load current char from $a1
-
-    # If both are null terminators, words match
-    beqz    $t0,                    check_end
-    beqz    $t1,                    check_end
-
-    # Compare letters
-    move    $a0,                    $t0
-    move    $a1,                    $t1
-    jal     lettersmatch
-
-    # If letters don't match, return 0
-    beqz    $v0,                    words_dont_match
-
-    # Move to next letters
+curr_word:
+    move    $t9,                    $a0
+    lbu     $t5,                    0($a0)
+    beq     $t5,                    $zero,                  end
+    move    $a0,                    $t5
+    jal     isletter
+    move    $a0,                    $t9
+    beq     $v0,                    $zero,                  skip_gap
     addi    $a0,                    $a0,                    1
-    addi    $a1,                    $a1,                    1
-    j       wordsmatch_loop
+    j       curr_word
 
-check_end:
-    # Check if one pointer is null while the other isn't
-    bnez    $t0,                    words_dont_match
-    bnez    $t1,                    words_dont_match
-    li      $v0,                    1                                           # Words match
-    j       wordsmatch_return
+skip_gap:
+    move    $t9,                    $a0
+    lbu     $t5,                    0($a0)
+    beq     $t5,                    $zero,                  end
+    move    $a0,                    $t5
+    jal     isletter
+    move    $a0,                    $t9
+    bne     $v0,                    $zero,                  return
+    addi    $a0,                    $a0,                    1
+    j       skip_gap
 
-words_dont_match:
-    li      $v0,                    0                                           # Words don't match
-
-wordsmatch_return:
-    # Restore registers
-    lw      $ra,                    0($sp)
-    lw      $s0,                    4($sp)
+return:
+    move    $v0,                    $a0
+    lw      $a0,                    0($sp)
+    lw      $ra,                    4($sp)
     addi    $sp,                    $sp,                    8
     jr      $ra
 
-    #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
+end:
+    li      $v0,                    0
+    lw      $a0,                    0($sp)
+    lw      $ra,                    4($sp)
+    addi    $sp,                    $sp,                    8
+    jr      $ra
+
+    #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
+
+    # check if two strings match
+wordsmatch:
+    addi    $sp,                    $sp,                    -12
+    sw      $ra,                    0($sp)
+    sw      $a0,                    4($sp)
+    sw      $a1,                    8($sp)
+
+check_value:
+    move    $t7,                    $a0
+    move    $t4,                    $a1
+    lbu     $t4,                    0($a0)
+    lbu     $t5,                    0($a1)
+
+
 main:
     # save to stack
     addi    $sp,                    $sp,                    -12

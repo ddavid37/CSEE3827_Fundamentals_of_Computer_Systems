@@ -78,82 +78,72 @@ letters_dont_match:
     #### Do not move this separator. Place all of your lettersmatch code above this line, and below previous separator. ###
 
 nextword:
+    # Save registers we'll use
     addi    $sp,                    $sp,                    -8
     sw      $ra,                    0($sp)
-    sw      $a0,                    4($sp)
+    sw      $s0,                    4($sp)
 
-find_word_start:
-    lbu     $t0,                    0($a0)                                      # Load current character
-    beq     $t0,                    $zero,                  no_next_word        # End of string
-    move    $t1,                    $a0
-    jal     isletter                                                            # Check if character is a letter
-    bne     $v0,                    $zero,                  word_found          # If it's a letter, we found the start
-    addi    $a0,                    $a0,                    1                   # Move to the next character
-    j       find_word_start
+    # Save starting address in $s0
+    move    $s0,                    $a0
 
-word_found:
-    move    $v0,                    $a0                                         # Return the pointer to the next word
+    # First, if we're inside a word, skip to end of current word
+skip_current:
+    # Load current character
+    lbu     $a0,                    0($s0)
+
+    # If null terminator, return 0
+    beqz    $a0,                    nextword_not_found
+
+    # Check if current char is letter
+    jal     isletter
+
+    # If not a letter, move to finding next word
+    beqz    $v0,                    find_next
+
+    # Still in word, keep moving
+    addi    $s0,                    $s0,                    1
+    j       skip_current
+
+find_next:
+    # Load current character
+    lbu     $a0,                    0($s0)
+
+    # If null terminator, return 0
+    beqz    $a0,                    nextword_not_found
+
+    # Check if current char is letter
+    jal     isletter
+
+    # If it's a letter, we found the start of next word
+    bnez    $v0,                    nextword_found
+
+    # Not a letter, keep looking
+    addi    $s0,                    $s0,                    1
+    j       find_next
+
+nextword_found:
+    # Return pointer to start of word
+    move    $v0,                    $s0
+    j       nextword_return
+
+nextword_not_found:
+    # Return 0 if no word found
+    li      $v0,                    0
+
+nextword_return:
+    # Restore saved registers
     lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
+    lw      $s0,                    4($sp)
     addi    $sp,                    $sp,                    8
     jr      $ra
-
-no_next_word:
-    li      $v0,                    0                                           # No next word found
-    lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
-    addi    $sp,                    $sp,                    8
-    jr      $ra
-
     #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
 
 wordsmatch:
-    addi    $sp,                    $sp,                    -12
-    sw      $ra,                    0($sp)
-    sw      $a0,                    4($sp)
-    sw      $a1,                    8($sp)
-
-compare_words:
-    lbu     $t0,                    0($a0)                                      # Load char from first word
-    lbu     $t1,                    0($a1)                                      # Load char from second word
-    beq     $t0,                    $zero,                  check_end           # End of first word
-    beq     $t1,                    $zero,                  check_end           # End of second word
-    move    $a0,                    $t0
-    move    $a1,                    $t1
-    jal     lettersmatch                                                        # Compare letters
-    bne     $v0,                    1,                      return_zero         # If letters don't match, return 0
-    addi    $a0,                    $a0,                    1                   # Move to next character in first word
-    addi    $a1,                    $a1,                    1                   # Move to next character in second word
-    j       compare_words
-
-check_end:
-    lbu     $t0,                    0($a0)
-    lbu     $t1,                    0($a1)
-    jal     isletter
-    bne     $v0,                    $zero,                  return_zero         # Check if end of both words
-    move    $a0,                    $t1
-    jal     isletter
-    bne     $v0,                    $zero,                  return_zero
-    j       return_one
-
-return_one:
-    li      $v0,                    1                                           # Words match
-    lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
-    lw      $a1,                    8($sp)
-    addi    $sp,                    $sp,                    12
+    # replace these instructions with your code
+    li      $v0,                    0
     jr      $ra
 
-return_zero:
-    li      $v0,                    0                                           # Words don't match
-    lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
-    lw      $a1,                    8($sp)
-    addi    $sp,                    $sp,                    12
-    jr      $ra
-
-
-    #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
+    #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
 
 main:
     # save to stack
