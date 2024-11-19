@@ -104,9 +104,58 @@ wordsmatch:
 check_value:
     move    $t7,                    $a0
     move    $t4,                    $a1
-    lbu     $t4,                    0($a0)
-    lbu     $t5,                    0($a1)
+    lbu     $s0,                    0($a0)
+    lbu     $s1,                    0($a1)
+    move    $a0,                    $s0
+    move    $a1,                    $s1
+    jal     lettersmatch
+    move    $a0,                    $t7
+    move    $a1,                    $t4
+    bne     $v0,                    $zero,                  next_value
+    move    $a0,                    $s0
+    move    $a1,                    $s1
+    jal     isletter
+    move    $t6,                    $v0
+    move    $a0,                    $a1
+    jal     isletter
+    move    $a0,                    $t7
+    move    $a1,                    $t4
+    beq     $t6,                    $zero,                  end_check
+    beq     $v0,                    $zero,                  end_check
+    j       check_value
 
+next_value:
+    jal     isletter
+    move    $t6,                    $v0
+    move    $a0,                    $a1
+    jal     isletter
+    move    $a1,                    $t7
+    beq     $t6,                    $zero,                  end_check
+    addi    $a0,                    $a0,                    1
+    addi    $a1,                    $a1,                    1
+    j       check_value
+
+end_check:
+    beq     $t6,                    $v0,                    return_one
+    j       return_zero
+
+return_one:
+    li      $v0,                    1
+    lw      $ra,                    0($sp)
+    lw      $a0,                    4($sp)
+    lw      $a1,                    8($sp)
+    addi    $sp,                    $sp,                    12
+    jr      $ra
+
+return_zero:
+    li      $v0,                    0
+    lw      $ra,                    0($sp)
+    lw      $a0,                    4($sp)
+    lw      $a1,                    8($sp)
+    addi    $sp,                    $sp,                    12
+    jr      $ra
+
+    #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
 
 main:
     # save to stack
