@@ -94,68 +94,47 @@ end:
 
     #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
 
-wordsmatch:
-    addi    $sp,                    $sp,                    -12         # Save to stack (12 bytes)
-    sw      $ra,                    0($sp)                              # Save return address
-    sw      $a0,                    4($sp)                              # Save first word
-    sw      $a1,                    8($sp)                              # Save second word
+nextword:
+    addi    $sp,                    $sp,                    -4          # make space for $ra
+    sw      $ra,                    0($sp)                              # save the return address
+    move    $t0,                    $a0                                 # $t0 become string pointer
 
-check_value:
-    move    $t7,                    $a0                                 # Save first word
-    move    $t4,                    $a1                                 # Save second word
-    lbu     $s0,                    0($a0)                              # Load byte from first word
-    lbu     $s1,                    0($a1)                              # Load byte from second word
-    beq     $s0,                    $zero,                  end_check   # Check for null terminator in first word
-    beq     $s1,                    $zero,                  end_check   # Check for null terminator in second word
-    move    $a0,                    $s0
-    move    $a1,                    $s1
-    jal     lettersmatch                                                # Call lettersmatch
-    move    $a0,                    $t7                                 # Restore first word
-    move    $a1,                    $t4                                 # Restore second word
-    bne     $v0,                    $zero,                  next_value  # If letters don't match, go to next_value
-    move    $a0,                    $s0
-    move    $a1,                    $s1
-    jal     isletter                                                    # Check if first letter is valid
-    move    $t6,                    $v0
-    move    $a0,                    $a1
-    jal     isletter                                                    # Check if second letter is valid
-    move    $a0,                    $t7                                 # Restore first word
-    move    $a1,                    $t4                                 # Restore second word
-    beq     $t6,                    $zero,                  end_check   # If first letter is not valid, end check
-    beq     $v0,                    $zero,                  end_check   # If second letter is not valid, end check
-    j       check_value                                                 # Continue checking next character
+    lbu     $t1,                    0($t0)                              # load char from $t0
+    beqz    $t1,                    return_end                          #check if NULL
+    move    $a0,                    $t1
+    jal     isletter
+    bnez    $v0,                    word_skip                           #skip if char is letter
 
-next_value:
-    jal     isletter                                                    # Check if first letter is valid
-    move    $t6,                    $v0                                 # Save return value for first letter
-    move    $a0,                    $a1                                 # Move to next character in second word
-    jal     isletter                                                    # Check if second letter is valid
-    move    $a1,                    $t7                                 # Restore first word
-    beq     $t6,                    $zero,                  end_check   # If first letter is not a letter, return 0
-    addi    $a0,                    $a0,                    1           # Move to next char in first word
-    addi    $a1,                    $a1,                    1           # Move to next char in second word
-    j       check_value                                                 # Continue checking next characters
 
-end_check:
-    beq     $t6,                    $v0,                    return_one  # If both strings end, return 1
-    j       return_zero                                                 # If one string ends, return 0
+not_word_loop:
+    addi    $t0,                    $t0,                    1           #going to the next char
+    lbu     $t1,                    0($t0)                              #load the next char
+    beqz    $t1,                    return_end                          #check if NULL
+    move    $a0,                    $t1
+    jal     isletter
+    bnez    $v0,                    return_next
+    j       not_word_loop
 
-return_one:
-    li      $v0,                    1                                   # Return 1
-    lw      $ra,                    0($sp)                              # Restore return address
-    lw      $a0,                    4($sp)                              # Restore first word
-    lw      $a1,                    8($sp)                              # Restore second word
-    addi    $sp,                    $sp,                    12          # Restore stack
-    jr      $ra                                                         # Return
+word_skip:
+    addi    $t0,                    $t0,                    1           #going to the next char
+    lbu     $t1,                    0($t0)                              #load the next char
+    beqz    $t1,                    return_end                          #check if NULL
+    move    $a0,                    $t1
+    jal     isletter
+    bnez    $v0,                    word_skip
+    j       not_word_loop
 
-return_zero:
-    li      $v0,                    0                                   # Return 0
-    lw      $ra,                    0($sp)                              # Restore return address
-    lw      $a0,                    4($sp)                              # Restore first word
-    lw      $a1,                    8($sp)                              # Restore second word
-    addi    $sp,                    $sp,                    12          # Restore stack
-    jr      $ra                                                         # Return
+return_end:
+    lw      $ra,                    0($sp)
+    addi    $sp,                    $sp,                    4
+    li      $v0,                    0
+    jr      $ra
 
+return_next:
+    move    $v0,                    $t0
+    lw      $ra,                    0($sp)
+    addi    $sp,                    $sp,                    4
+    jr      $ra
     #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
 
 main:
