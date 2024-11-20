@@ -2,42 +2,40 @@
 
 isletter:
     # replace these instructions with your code
-    # 65-90=A-Z, 97-122=a-z
-    blt     $a0,                    65,                     return_not_letter   # less than A
-    bgt     $a0,                    122,                    return_not_letter   # more than z
-    ble     $a0,                    90,                     return_letter       # less or equal to Z
-    bge     $a0,                    97,                     return_letter       # greater or equal to a
+    blt     $a0,                    65,                     not_letter_return   # less than A
+    bgt     $a0,                    122,                    not_letter_return   # more than z
+    ble     $a0,                    90,                     letter_return       # less or equal to Z
+    bge     $a0,                    97,                     letter_return       # greater or equal to a
 
-    j       return_not_letter                                                   # not a letter
+    j       not_letter_return                                                   # not a letter
 
-return_letter:                                                                  # is a letter
+letter_return:                                                                  # is a letter
     li      $v0,                    1                                           # return 1
     jr      $ra                                                                 # return
 
-return_not_letter:                                                              # not a letter
+not_letter_return:                                                              # not a letter
     li      $v0,                    0                                           # return 0
     jr      $ra                                                                 # return
 
     #### Do not move this separator. Place all of your isletter code above this line. ####
 
 lettersmatch:                                                                   # $a0=char1, $a1=char2
-    # 65-90=A-Z, 97-122=a-z
     li      $t0,                    0                                           # $t0 = false
     move    $t1,                    $a0                                         # copy $a0
     move    $t2,                    $a1                                         # copy $a1
-    beq     $t1,                    $t2,                    its_match           # compare between characters
+    beq     $t1,                    $t2,                    match               # compare between characters
 
     blt     $t1,                    $t2,                    increase_t1         # check which is greater
     sub     $t1,                    $t1,                    32                  # converting to upper case
-    beq     $t1,                    $t2,                    its_match           # compare between characters
+    beq     $t1,                    $t2,                    match               # compare between characters
     j       return_not_match                                                    # not a match
 
 increase_t1:
     addi    $t1,                    $t1,                    32                  # converting to lower case
-    beq     $t1,                    $t2,                    its_match           # compare between characters
+    beq     $t1,                    $t2,                    match               # compare between characters
     j       return_not_match                                                    # not a match
 
-its_match:
+match:
     li      $t0,                    1                                           # $t0 = true
     move    $v0,                    $t0                                         # return $t0
     jr      $ra                                                                 # return
@@ -57,7 +55,7 @@ nextword:                                                                       
     beqz    $t1,                    return_end                                  # check if NULL
     move    $a0,                    $t1                                         # prepare for isletter
     jal     isletter                                                            # check if char is a letter
-    bnez    $v0,                    word_skip                                   # skip if char is a letter
+    bnez    $v0,                    skip_word                                   # skip if char is a letter
 
 not_word_loop:                                                                  # loop to find the next word
     addi    $t0,                    $t0,                    1                   # going to the next char
@@ -68,13 +66,13 @@ not_word_loop:                                                                  
     bnez    $v0,                    return_next                                 # return the pointer if it is a letter
     j       not_word_loop                                                       # continue the loop
 
-word_skip:                                                                      # skip the word
+skip_word:                                                                      # skip the word
     addi    $t0,                    $t0,                    1                   # going to the next char
     lbu     $t1,                    0($t0)                                      # load the next char
     beqz    $t1,                    return_end                                  # check if NULL
     move    $a0,                    $t1                                         # prepare for isletter
     jal     isletter                                                            # check if char is a letter
-    bnez    $v0,                    word_skip                                   # skip if char is a letter
+    bnez    $v0,                    skip_word                                   # skip if char is a letter
     j       not_word_loop                                                       # continue the loop
 
 return_end:                                                                     # end of the string
