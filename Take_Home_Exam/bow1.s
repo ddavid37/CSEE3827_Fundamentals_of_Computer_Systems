@@ -96,16 +96,18 @@ end:
 
     # check if two strings match
 wordsmatch:
-    addi    $sp,                    $sp,                    -12
-    sw      $ra,                    0($sp)
-    sw      $a0,                    4($sp)
-    sw      $a1,                    8($sp)
+    addi    $sp,                    $sp,                    -12         # save to stack
+    sw      $ra,                    0($sp)                              # save return address
+    sw      $a0,                    4($sp)                              # save first word
+    sw      $a1,                    8($sp)                              # save second word
 
 check_value:
-    move    $t7,                    $a0
-    move    $t4,                    $a1
+    move    $t7,                    $a0                                 # save first word
+    move    $t4,                    $a1                                 # save second word
     lbu     $s0,                    0($a0)
     lbu     $s1,                    0($a1)
+    beq     $s0,                    $zero,                  end_check   # check for null terminator
+    beq     $s1,                    $zero,                  end_check   # check for null terminator
     move    $a0,                    $s0
     move    $a1,                    $s1
     jal     lettersmatch
@@ -126,34 +128,35 @@ check_value:
 
 next_value:
     jal     isletter
-    move    $t6,                    $v0
-    move    $a0,                    $a1
-    jal     isletter
-    move    $a1,                    $t7
-    beq     $t6,                    $zero,                  end_check
-    addi    $a0,                    $a0,                    1
-    addi    $a1,                    $a1,                    1
-    j       check_value
+    move    $t6,                    $v0                                 # save return value
+    move    $a0,                    $a1                                 # move to next char
+    jal     isletter                                                    # check if next char is a letter
+    move    $a1,                    $t7                                 # move back to first word
+    beq     $t6,                    $zero,                  end_check   # if first char is not a letter, return 0
+    addi    $a0,                    $a0,                    1           # move to next char
+    addi    $a1,                    $a1,                    1           # move to next char
+    j       check_value                                                 # check next char
 
 end_check:
-    beq     $t6,                    $v0,                    return_one
-    j       return_zero
+    beq     $t6,                    $v0,                    return_one  # if both strings end, return 1
+    j       return_zero                                                 # if only one string ends, return 0
 
 return_one:
-    li      $v0,                    1
-    lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
-    lw      $a1,                    8($sp)
-    addi    $sp,                    $sp,                    12
-    jr      $ra
+    li      $v0,                    1                                   # return 1
+    lw      $ra,                    0($sp)                              # restore return address
+    lw      $a0,                    4($sp)                              # restore first word
+    lw      $a1,                    8($sp)                              # restore second word
+    addi    $sp,                    $sp,                    12          # restore stack
+    jr      $ra                                                         # return
 
 return_zero:
-    li      $v0,                    0
-    lw      $ra,                    0($sp)
-    lw      $a0,                    4($sp)
-    lw      $a1,                    8($sp)
-    addi    $sp,                    $sp,                    12
-    jr      $ra
+
+    li      $v0,                    0                                   # return 0
+    lw      $ra,                    0($sp)                              # restore return address
+    lw      $a0,                    4($sp)                              # restore first word
+    lw      $a1,                    8($sp)                              # restore second word
+    addi    $sp,                    $sp,                    12          # restore stack
+    jr      $ra                                                         # return
 
     #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
 
