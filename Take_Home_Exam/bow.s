@@ -1,168 +1,145 @@
 .text
 
 isletter:
-    li      $t1,                    65
-    li      $t2,                    90
-    li      $t3,                    97
-    li      $t4,                    122
+    # replace these instructions with your code
+    # 65-90=A-Z, 97-122=a-z
+    blt     $a0,                    65,                     return_not_letter   # less than A
+    bgt     $a0,                    122,                    return_not_letter   # more than z
+    ble     $a0,                    90,                     return_letter       # less or equal to Z
+    bge     $a0,                    97,                     return_letter       # greater or equal to a
 
-    # check if char is in range A-Z or a-z
-    bgt     $a0,                    $t2,                    check_a
+    j       return_not_letter                                                   # not a letter
 
-    bgt     $t1,                    $a0,                    zero_value
-    bgt     $a0,                    $t2,                    zero_value
-    li      $v0,                    1
-    jr      $ra
+return_letter:                                                                  # is a letter
+    li      $v0,                    1                                           # return 1
+    jr      $ra                                                                 # return
 
-check_a:
-    bgt     $t3,                    $a0,                    zero_value
-    bgt     $a0,                    $t4,                    zero_value
-    li      $v0,                    1
-    jr      $ra
+return_not_letter:                                                              # not a letter
+    li      $v0,                    0                                           # return 0
+    jr      $ra                                                                 # return
 
-zero_value:
+    #### Do not move this separator. Place all of your isletter code above this line. ####
 
-    li      $v0,                    0
-    jr      $ra
+lettersmatch:                                                                   # $a0=char1, $a1=char2
+    # 65-90=A-Z, 97-122=a-z
+    li      $t0,                    0                                           # $t0 = false
+    move    $t1,                    $a0                                         # copy $a0
+    move    $t2,                    $a1                                         # copy $a1
+    beq     $t1,                    $t2,                    its_match           # compare between characters
 
-    #### Do not move this separator. Place all of your isletter code above this line, and below previous separator. ###
+    blt     $t1,                    $t2,                    increase_t1         # check which is greater
+    sub     $t1,                    $t1,                    32                  # converting to upper case
+    beq     $t1,                    $t2,                    its_match           # compare between characters
+    j       return_not_match                                                    # not a match
 
-    # check if two characters match
-lettersmatch:
-    li      $t8,                    32
-    beq     $a1,                    $a0,                    link_one
-    slt     $v0,                    $a0,                    $a1
-    beq     $v0,                    $zero,                  sub_a
-    sub     $v0,                    $a1,                    $a0
-    beq     $v0,                    $t8,                    link_one
-    li      $v0,                    0
-    jr      $ra
+increase_t1:
+    addi    $t1,                    $t1,                    32                  # converting to lower case
+    beq     $t1,                    $t2,                    its_match           # compare between characters
+    j       return_not_match                                                    # not a match
 
-sub_a:
-    sub     $v0,                    $a0,                    $a1
-    beq     $v0,                    $t8,                    link_one
-    li      $v0,                    0
-    jr      $ra
+its_match:
+    li      $t0,                    1                                           # $t0 = true
+    move    $v0,                    $t0                                         # return $t0
+    jr      $ra                                                                 # return
 
-link_one:
-    li      $v0,                    1
-    jr      $ra
+return_not_match:                                                               # not a match
+    move    $v0,                    $t0                                         # return $t0
+    jr      $ra                                                                 # return
 
     #### Do not move this separator. Place all of your lettersmatch code above this line, and below previous separator. ###
 
-    # find the next word in a string
-nextword:
-    addi    $sp,                    $sp,                    -8
-    sw      $a0,                    0($sp)
-    sw      $ra,                    4($sp)
+nextword:                                                                       # $a0=string pointer
+    addi    $sp,                    $sp,                    -4                  # make space for $ra
+    sw      $ra,                    0($sp)                                      # save the return address
+    move    $t0,                    $a0                                         # $t0 becomes string pointer
 
-curr_word:
-    move    $t9,                    $a0
-    lbu     $t5,                    0($a0)
-    beq     $t5,                    $zero,                  end
-    move    $a0,                    $t5
-    jal     isletter
-    move    $a0,                    $t9
-    beq     $v0,                    $zero,                  skip_gap
-    addi    $a0,                    $a0,                    1
-    j       curr_word
+    lbu     $t1,                    0($t0)                                      # load char from $t0
+    beqz    $t1,                    return_end                                  # check if NULL
+    move    $a0,                    $t1                                         # prepare for isletter
+    jal     isletter                                                            # check if char is a letter
+    bnez    $v0,                    word_skip                                   # skip if char is a letter
 
-skip_gap:
-    move    $t9,                    $a0
-    lbu     $t5,                    0($a0)
-    beq     $t5,                    $zero,                  end
-    move    $a0,                    $t5
-    jal     isletter
-    move    $a0,                    $t9
-    bne     $v0,                    $zero,                  return
-    addi    $a0,                    $a0,                    1
-    j       skip_gap
+not_word_loop:                                                                  # loop to find the next word
+    addi    $t0,                    $t0,                    1                   # going to the next char
+    lbu     $t1,                    0($t0)                                      # load the next char
+    beqz    $t1,                    return_end                                  # check if NULL
+    move    $a0,                    $t1                                         # prepare for isletter
+    jal     isletter                                                            # check if char is a letter
+    bnez    $v0,                    return_next                                 # return the pointer if it is a letter
+    j       not_word_loop                                                       # continue the loop
 
-return:
-    move    $v0,                    $a0
-    lw      $a0,                    0($sp)
-    lw      $ra,                    4($sp)
-    addi    $sp,                    $sp,                    8
-    jr      $ra
+word_skip:                                                                      # skip the word
+    addi    $t0,                    $t0,                    1                   # going to the next char
+    lbu     $t1,                    0($t0)                                      # load the next char
+    beqz    $t1,                    return_end                                  # check if NULL
+    move    $a0,                    $t1                                         # prepare for isletter
+    jal     isletter                                                            # check if char is a letter
+    bnez    $v0,                    word_skip                                   # skip if char is a letter
+    j       not_word_loop                                                       # continue the loop
 
-end:
-    li      $v0,                    0
-    lw      $a0,                    0($sp)
-    lw      $ra,                    4($sp)
-    addi    $sp,                    $sp,                    8
-    jr      $ra
+return_end:                                                                     # end of the string
+    lw      $ra,                    0($sp)                                      # restore the return address
+    addi    $sp,                    $sp,                    4                   # restore the stack pointer
+    li      $v0,                    0                                           # return 0
+    jr      $ra                                                                 # return
+
+return_next:                                                                    # return the pointer to the next word
+    move    $v0,                    $t0                                         # return the pointer
+    lw      $ra,                    0($sp)                                      # restore the return address
+    addi    $sp,                    $sp,                    4                   # restore the stack pointer
+    jr      $ra                                                                 # return
 
     #### Do not move this separator. Place all of your nextword code above this line, and below previous separator. ###
 
-wordsmatch:
-    # Save $a0 and $a1 to stack to preserve original pointers
-    addi    $sp,                    $sp,                    -8
-    sw      $a0,                    0($sp)
-    sw      $a1,                    4($sp)
+wordsmatch:                                                                     # $a0=first string pointer, $a1=second string pointer
+    addi    $sp,                    $sp,                    -12                 # make space for ra and registers
+    sw      $ra,                    0($sp)                                      # save return address
+    sw      $s0,                    4($sp)                                      # save registers
+    sw      $s1,                    8($sp)                                      # save registers
 
-word_loop:
-    # Load current characters from $a0 and $a1
-    lbu     $t0,                    0($a0)
-    lbu     $t1,                    0($a1)
+    move    $s0,                    $a0                                         # first string pointer
+    move    $s1,                    $a1                                         # second string pointer
 
-    # Check if we reached the end of either word
-    beq     $t0,                    $zero,                  check_end
-    beq     $t1,                    $zero,                  check_end
+loop:                                                                           # loop to check each char
+    lbu     $t0,                    0($s0)                                      # load char from first string
+    move    $a0,                    $t0                                         # prepare for isletter
+    jal     isletter                                                            # check if it is a letter
+    beqz    $v0,                    check_both_end                              # if not a letter, check if both words end
 
-    # Check if both characters are letters
-    move    $a0,                    $t0
-    jal     isletter
-    move    $t2,                    $v0                                 # Store result of isletter($t0)
+    lbu     $t0,                    0($s1)                                      # load char from second string
+    move    $a0,                    $t0                                         # prepare for isletter
+    jal     isletter                                                            # check if it is a letter
+    beqz    $v0,                    return_zero                                 # if second ends while first continues
 
-    move    $a0,                    $t1
-    jal     isletter
-    move    $t3,                    $v0                                 # Store result of isletter($t1)
+    lbu     $t0,                    0($s0)                                      # reload first char
+    move    $a0,                    $t0                                         # prepare for lettersmatch
+    lbu     $t0,                    0($s1)                                      # load char from second string
+    move    $a1,                    $t0                                         # prepare for lettersmatch
+    jal     lettersmatch                                                        # check if letters match
+    beqz    $v0,                    return_zero                                 # if second ends while first continues
 
-    # If one is not a letter, skip it
-    beq     $t2,                    $zero,                  skip_a0
-    beq     $t3,                    $zero,                  skip_a1
+    addi    $s0,                    $s0,                    1                   # next chars
+    addi    $s1,                    $s1,                    1                   # next chars
 
-    # Check if letters match
-    move    $a0,                    $t0
-    move    $a1,                    $t1
-    jal     lettersmatch
-    beq     $v0,                    $zero,                  mismatch
+    j       loop                                                                # continue the loop
 
-    # Advance both pointers if letters match
-    addi    $a0,                    $a0,                    1
-    addi    $a1,                    $a1,                    1
-    j       word_loop
+check_both_end:                                                                 # check if both words end
+    lbu     $t0,                    0($s1)                                      # load char from second string
+    move    $a0,                    $t0                                         # prepare for isletter
+    jal     isletter                                                            # check if second word ends
+    bnez    $v0,                    return_zero                                 # if second word continues
+    li      $v0,                    1                                           # both words end together
+    j       return_one                                                          # return 1
 
-skip_a0:
-    # Skip non-letter in $a0
-    addi    $a0,                    $a0,                    1
-    j       word_loop
+return_zero:                                                                    # return 0
+    li      $v0,                    0                                           # return 0
 
-skip_a1:
-    # Skip non-letter in $a1
-    addi    $a1,                    $a1,                    1
-    j       word_loop
+return_one:                                                                     #restore registers
 
-check_end:
-    # Ensure both pointers are at the end
-    lbu     $t0,                    0($a0)
-    lbu     $t1,                    0($a1)
-    beq     $t0,                    $t1,                    match
-
-mismatch:
-    # Words do not match
-    li      $v0,                    0
-    j       wordsmatch_end
-
-match:
-    # Words match
-    li      $v0,                    1
-
-wordsmatch_end:
-    # Restore original pointers and return
-    lw      $a0,                    0($sp)
-    lw      $a1,                    4($sp)
-    addi    $sp,                    $sp,                    8
+    lw      $ra,                    0($sp)                                      # restore return address
+    lw      $s0,                    4($sp)                                      # restore registers
+    lw      $s1,                    8($sp)                                      # restore registers
+    addi    $sp,                    $sp,                    12                  # restore pointer
     jr      $ra
 
     #### Do not move this separator. Place all of your wordsmatch code above this line, and below previous separator. ###
